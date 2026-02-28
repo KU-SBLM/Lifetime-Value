@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+import config
+
+class OrdinalCategoryEncoder:
+    def __init__(self):
+        self.maps = {}
+        self.cols = []
+
+    def fit(self, df, cat_cols):
+        self.cols = list(cat_cols)
+        for c in self.cols:
+            cats = pd.Series(df[c].astype("category").cat.categories)
+            self.maps[c] = {cat: i for i, cat in enumerate(cats)}
+        return self
+
+    def transform(self, df):
+        out = df.copy()
+        for c in self.cols:
+            if c in out.columns:
+                s = out[c].astype(object)
+                out[c] = s.apply(lambda v: self.maps[c].get(v, -1)).astype(np.int32)
+        return out
+
+def build_features(df, target_col, drop_cols):
+    drop_cols_no_id = [c for c in drop_cols if c != config.ID_COL]
+    additional_drop = [c for c in [config.PRED_PAYER_COL, config.STAGE1_PROBA_COL] if c in df.columns]
+    cols = [c for c in df.columns if c not in drop_cols_no_id and c not in additional_drop]
+    X = df[cols].copy()
+    
+    if config.EXCLUDE_PROBA_FEATURES:
+        proba_cols = [c for c in X.columns if "proba" in c.lower()]
+        X = X.drop(columns=proba_cols, errors="ignore")
+        
+    if config.USE_STAGE1_FEATURES and config.STAGE1_PROBA_COL in df.columns:
+        X[config.STAGE1_PROBA_COL] = df[config.STAGE1_PROBA_COL]
+        
+    final_cols = X.columns.tolist()
+    cat_cols = [c for c in final_cols if df[c].dtype == "object" or str(df[c].dtype).startswith("category")]
+    
+    return X, final_cols, cat_cols
+
+def fit_imputer(train_df):
+    num_cols = [c for c in train_df.columns if train_df[c].dtype != 'object' and not str(train_df[c].dtype).startswith('category')]
+    med = train_df[num_cols].median(numeric_only=True)
+    return num_cols, med
+
+def apply_imputer(df, num_cols, med):
+    df = df.copy()
+    df[num_cols] = df[num_cols].fillna(med)
+    df = df.fillna(0)
+    return df
