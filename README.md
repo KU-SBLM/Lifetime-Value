@@ -1,6 +1,6 @@
-<h2 align='center'> LTV 추정의 편향성 감소를 위한 계층적 앙상블 모델링 연구 : 
+<h2 align='center'> LTV 추정의 편향성 감소를 위한 계층적 앙상블 모델링 연구
 
-고가치 사용자의 전략적 식별을 중심으로
+: 고가치 사용자의 전략적 식별을 중심으로
 <h3 align='center'> A Hierarchical Ensemble Framework for Bias-Reduced Lifetime Value Estimation </h3>
 
 
